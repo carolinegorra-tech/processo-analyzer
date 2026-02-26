@@ -3,87 +3,150 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Processo Analyzer — Extração com IA</title>
+<title>Processo Analyzer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&display=swap');
-  :root{--gold:#c8aa64;--gold-faint:rgba(200,170,100,0.3);--gold-dim:rgba(200,170,100,0.6);--bg-deep:#0a0f1e;--bg-mid:#0d1f3c;--text:#e8e4d9;--text-light:#f0ead0}
+  :root{--cream:#faf6ee;--cream-dark:#f0ebe0;--ink:#1a1a1a;--ink-light:#4a4a4a;--ink-muted:#8a8578;--accent:#b8965a;--accent-hover:#a07d42;--accent-faint:rgba(184,150,90,0.08);--accent-border:rgba(184,150,90,0.25);--white:#ffffff;--shadow-sm:0 1px 3px rgba(0,0,0,0.04);--shadow-md:0 4px 20px rgba(0,0,0,0.06);--shadow-lg:0 12px 40px rgba(0,0,0,0.08);--radius:14px}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{min-height:100vh;background:linear-gradient(135deg,var(--bg-deep) 0%,var(--bg-mid) 50%,#0a1628 100%);font-family:'Crimson Text',Georgia,serif;color:var(--text)}
-  .header{border-bottom:1px solid var(--gold-faint);padding:22px 36px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.3)}
-  .header-label{font-size:10px;letter-spacing:4px;color:var(--gold);text-transform:uppercase;margin-bottom:3px}
-  .header-title{font-size:20px;font-weight:bold;color:var(--text-light)}
-  .header-right{text-align:right}
-  .header-status{font-size:12px;color:rgba(200,170,100,0.8);margin-bottom:2px;display:none}
+  body{min-height:100vh;background:var(--cream);font-family:'Outfit',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+
+  /* Subtle grain texture */
+  body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:0.5}
+
+  /* Header */
+  .header{position:sticky;top:0;z-index:100;padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;background:rgba(250,246,238,0.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,0.06)}
+  .header-brand{display:flex;align-items:center;gap:12px}
+  .header-dot{width:8px;height:8px;background:var(--accent);border-radius:50%}
+  .header-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-0.3px}
+  .header-right{display:flex;align-items:center;gap:16px}
+  .header-status{font-size:12px;color:var(--ink-muted);display:none;font-weight:300}
   .header-status.visible{display:block}
-  .header-legal{font-size:10px;color:rgba(200,170,100,0.4)}
-  .container{max-width:820px;margin:0 auto;padding:40px 24px}
-  .upload-zone{border:2px dashed var(--gold-faint);border-radius:12px;padding:60px 40px;text-align:center;background:rgba(255,255,255,0.02);cursor:pointer;transition:all 0.2s}
-  .upload-zone:hover,.upload-zone.dragging{border-color:var(--gold);background:rgba(200,170,100,0.05)}
-  .upload-icon{font-size:48px;margin-bottom:16px}
-  .upload-title{font-size:18px;color:var(--gold);margin-bottom:8px}
-  .upload-subtitle{font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:20px}
-  .upload-filename{font-size:11px;color:rgba(200,170,100,0.4);letter-spacing:1px}
-  .upload-footer{margin-top:32px;text-align:center;color:rgba(255,255,255,0.15);font-size:11px;letter-spacing:2px}
-  .analyze-section{text-align:center;margin:28px 0}
-  .analyze-btn{padding:14px 40px;background:var(--gold);border:none;border-radius:4px;color:var(--bg-deep);font-size:14px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:'Crimson Text',Georgia,serif;transition:filter 0.2s}
-  .analyze-btn:hover{filter:brightness(1.1)}
-  .analyze-btn:disabled{opacity:0.4;cursor:not-allowed;filter:none}
-  .progress-section{text-align:center;margin:20px 0}
-  .progress-track{width:100%;max-width:400px;margin:0 auto;height:3px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden}
-  .progress-bar{height:100%;background:var(--gold);border-radius:10px;transition:width 0.5s ease}
-  .progress-text{font-size:12px;color:var(--gold-dim);margin-top:8px}
-  .error-box{background:rgba(200,60,60,0.15);border:1px solid rgba(200,60,60,0.3);border-radius:6px;padding:14px 18px;margin:16px 0;color:#e06060;font-size:14px;line-height:1.5}
-  .section-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
-  .results-section{margin-top:30px}
-  .results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-  .export-btn{padding:7px 16px;background:transparent;border:1px solid var(--gold-faint);border-radius:4px;color:var(--gold);font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:'Crimson Text',Georgia,serif;transition:all 0.2s}
-  .export-btn:hover{border-color:var(--gold);background:rgba(200,170,100,0.08)}
-  .cat-row{padding:10px 20px;margin-top:16px;margin-bottom:4px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:bold;border-bottom:1px solid var(--gold-faint)}
-  .cat-row:first-child{margin-top:0}
-  .data-row{display:flex;padding:10px 20px;gap:16px;border-bottom:1px solid rgba(255,255,255,0.04);animation:cardIn 0.2s ease both}
-  .data-row:hover{background:rgba(255,255,255,0.02)}
-  .data-label{min-width:220px;flex-shrink:0;font-size:13px;color:var(--gold-dim)}
-  .data-value{font-size:14px;color:var(--text-light);line-height:1.5;word-break:break-word}
-  .data-value.empty{color:rgba(255,255,255,0.2);font-style:italic}
-  @keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-  .results-wrap{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px;overflow:hidden}
-  .reset-section{margin-top:40px;text-align:center}
-  .reset-btn{padding:8px 20px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:rgba(255,255,255,0.3);font-size:11px;letter-spacing:1px;cursor:pointer;font-family:'Crimson Text',Georgia,serif;transition:all 0.2s}
-  .reset-btn:hover{border-color:rgba(255,255,255,0.25);color:rgba(255,255,255,0.5)}
-  .footer-note{text-align:center;font-size:10px;color:rgba(255,255,255,0.15);margin-top:30px;letter-spacing:1px}
+  .header-tag{font-size:9px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;font-weight:500;padding:5px 12px;border:1px solid var(--accent-border);border-radius:100px}
+
+  /* Container */
+  .container{max-width:720px;margin:0 auto;padding:60px 24px 80px}
+
+  /* Hero text */
+  .hero{text-align:center;margin-bottom:48px}
+  .hero h1{font-family:'Playfair Display',serif;font-size:38px;font-weight:700;color:var(--ink);letter-spacing:-1px;line-height:1.2;margin-bottom:12px}
+  .hero h1 em{font-style:italic;color:var(--accent)}
+  .hero p{font-size:14px;color:var(--ink-muted);font-weight:300;letter-spacing:0.3px}
+
+  /* Upload */
+  .upload-zone{border:2px dashed rgba(0,0,0,0.1);border-radius:var(--radius);padding:56px 40px;text-align:center;background:var(--white);cursor:pointer;transition:all 0.4s cubic-bezier(0.16,1,0.3,1);box-shadow:var(--shadow-sm)}
+  .upload-zone:hover,.upload-zone.dragging{border-color:var(--accent);background:var(--accent-faint);box-shadow:var(--shadow-md)}
+  .upload-icon-wrap{width:56px;height:56px;margin:0 auto 20px;background:var(--accent-faint);border-radius:14px;display:flex;align-items:center;justify-content:center;transition:all 0.3s}
+  .upload-zone:hover .upload-icon-wrap{background:rgba(184,150,90,0.15);transform:scale(1.05)}
+  .upload-icon{font-size:22px}
+  .upload-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--ink);margin-bottom:6px;font-weight:500}
+  .upload-subtitle{font-size:13px;color:var(--ink-muted);font-weight:300}
+  .upload-filename{font-size:11px;color:var(--accent);letter-spacing:1px;margin-top:20px;font-weight:400}
+  .upload-footer{margin-top:20px;text-align:center;color:rgba(0,0,0,0.2);font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:300}
+
+  /* Chips */
+  .chips{display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap}
+  .chip{font-size:10px;padding:5px 12px;border-radius:100px;background:var(--cream-dark);color:var(--ink-muted);font-weight:400;letter-spacing:0.5px}
+
+  /* Button */
+  .analyze-section{text-align:center;margin:36px 0}
+  .analyze-btn{padding:16px 56px;background:var(--ink);border:none;border-radius:10px;color:var(--cream);font-size:13px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.3s;box-shadow:0 4px 16px rgba(0,0,0,0.12)}
+  .analyze-btn:hover{background:#2a2a2a;transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,0.16)}
+  .analyze-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none;box-shadow:none}
+
+  /* Progress */
+  .progress-section{text-align:center;margin:32px 0;padding:20px}
+  .progress-track{width:100%;max-width:280px;margin:0 auto;height:3px;background:rgba(0,0,0,0.06);border-radius:10px;overflow:hidden}
+  .progress-bar{height:100%;background:var(--accent);border-radius:10px;transition:width 0.6s cubic-bezier(0.16,1,0.3,1)}
+  .progress-text{font-size:12px;color:var(--ink-muted);margin-top:14px;font-weight:300}
+  .progress-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--accent-border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Error */
+  .error-box{background:rgba(200,60,60,0.06);border:1px solid rgba(200,60,60,0.15);border-radius:10px;padding:16px 20px;margin:16px 0;color:#b04040;font-size:13px;line-height:1.6;font-weight:300}
+
+  /* Results */
+  .results-section{margin-top:40px;animation:slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both}
+  .results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .section-label{font-family:'Playfair Display',serif;font-size:20px;color:var(--ink);font-weight:600;letter-spacing:-0.3px}
+  .export-btn{padding:8px 20px;background:var(--white);border:1px solid rgba(0,0,0,0.1);border-radius:8px;color:var(--ink-light);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.2s;font-weight:400;display:flex;align-items:center;gap:6px}
+  .export-btn:hover{border-color:rgba(0,0,0,0.2);box-shadow:var(--shadow-sm)}
+
+  .results-wrap{background:var(--white);border:1px solid rgba(0,0,0,0.06);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md)}
+  .cat-row{padding:14px 28px;font-family:'Playfair Display',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:600;background:var(--accent-faint);border-bottom:1px solid rgba(0,0,0,0.04)}
+  .data-row{display:flex;padding:14px 28px;gap:20px;border-bottom:1px solid rgba(0,0,0,0.03);transition:background 0.15s;animation:fadeRow 0.3s ease both}
+  .data-row:hover{background:rgba(0,0,0,0.01)}
+  .data-row:last-child{border-bottom:none}
+  .data-label{min-width:200px;flex-shrink:0;font-size:12px;color:var(--ink-muted);font-weight:400;padding-top:1px}
+  .data-value{font-size:14px;color:var(--ink);line-height:1.7;word-break:break-word;font-weight:400}
+  .data-value.empty{color:rgba(0,0,0,0.2);font-style:italic;font-weight:300}
+
+  /* Reset */
+  .reset-section{margin-top:48px;text-align:center}
+  .reset-btn{padding:10px 28px;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:8px;color:var(--ink-muted);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.2s;font-weight:300}
+  .reset-btn:hover{border-color:rgba(0,0,0,0.2);color:var(--ink)}
+
+  .footer-note{text-align:center;font-size:10px;color:rgba(0,0,0,0.2);margin-top:40px;letter-spacing:1px;font-weight:300}
+
   .hidden{display:none!important}
-  @media(max-width:600px){.header{padding:16px 20px}.container{padding:24px 16px}.data-row{flex-direction:column;gap:2px}.data-label{min-width:unset}}
+
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeRow{from{opacity:0}to{opacity:1}}
+
+  @media(max-width:600px){
+    .header{padding:0 18px;height:56px}
+    .hero h1{font-size:28px}
+    .container{padding:40px 16px 60px}
+    .upload-zone{padding:40px 20px}
+    .data-row{flex-direction:column;gap:4px;padding:12px 20px}
+    .data-label{min-width:unset}
+    .cat-row{padding:12px 20px}
+    .chips{gap:6px}
+  }
 </style>
 </head>
 <body>
 <div class="header">
-  <div>
-    <div class="header-label">Análise com IA</div>
-    <div class="header-title">Processo Analyzer — Trabalhista</div>
+  <div class="header-brand">
+    <div class="header-dot"></div>
+    <div class="header-title">Processo Analyzer</div>
   </div>
   <div class="header-right">
     <div class="header-status" id="headerStatus"></div>
-    <div class="header-legal">Powered by Claude AI</div>
+    <div class="header-tag">Claude AI</div>
   </div>
 </div>
 <div class="container">
+  <div class="hero" id="heroSection">
+    <h1>Analise processos<br>com <em>inteligência</em></h1>
+    <p>Extraia 34 campos automaticamente de qualquer PDF trabalhista</p>
+  </div>
   <div id="uploadZone" class="upload-zone" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
-    <div class="upload-icon">📄</div>
-    <div class="upload-title">Carregar PDF do Processo</div>
-    <div class="upload-subtitle">Arraste o arquivo aqui ou clique para selecionar</div>
-    <div class="upload-filename" id="fileName">Aceita qualquer PDF trabalhista</div>
+    <div class="upload-icon-wrap"><div class="upload-icon">📄</div></div>
+    <div class="upload-title">Carregar PDF</div>
+    <div class="upload-subtitle">Arraste aqui ou clique para selecionar</div>
+    <div class="upload-filename" id="fileName"></div>
     <input id="fileInput" type="file" accept=".pdf" onchange="handleFile(event)" style="display:none">
   </div>
-  <div id="uploadFooter" class="upload-footer">34 campos extraídos automaticamente · Sentença · TRT · TST · Execução</div>
+  <div id="uploadFooter" class="chips">
+    <span class="chip">Sentença</span>
+    <span class="chip">TRT</span>
+    <span class="chip">TST</span>
+    <span class="chip">Execução</span>
+    <span class="chip">Partes</span>
+    <span class="chip">Audiência</span>
+  </div>
   <div id="analyzeSection" class="analyze-section hidden"><button class="analyze-btn" id="analyzeBtn" onclick="analyze()">Analisar Processo</button></div>
   <div id="progressSection" class="progress-section hidden"><div class="progress-track"><div class="progress-bar" id="progressBar" style="width:0%"></div></div><div class="progress-text" id="progressText"></div></div>
   <div id="errorBox" class="error-box hidden"></div>
   <div id="resultsSection" class="results-section hidden">
-    <div class="results-header"><div class="section-label">Resultado da Análise</div><button class="export-btn" onclick="exportCSV()">⬇ Exportar CSV</button></div>
+    <div class="results-header">
+      <div class="section-label">Resultado</div>
+      <button class="export-btn" onclick="exportCSV()"><span>↓</span> Exportar CSV</button>
+    </div>
     <div class="results-wrap" id="resultsWrap"></div>
   </div>
-  <div id="resetSection" class="reset-section hidden"><button class="reset-btn" onclick="resetAll()">Carregar outro arquivo</button></div>
+  <div id="resetSection" class="reset-section hidden"><button class="reset-btn" onclick="resetAll()">Analisar outro processo</button></div>
   <div id="footerNote" class="footer-note hidden"></div>
 </div>
 <script>
@@ -149,17 +212,18 @@ function handleFile(e){if(e.target.files[0])loadFile(e.target.files[0])}
 function loadFile(f){
   if(!f||f.type!=='application/pdf'){showError('Selecione um arquivo PDF.');return}
   currentFile=f;hide($('errorBox'));hide($('resultsSection'));analysisResults=null;
-  $('fileName').textContent=f.name+' ('+(f.size/1024/1024).toFixed(2)+' MB)';
-  $('uploadZone').style.borderColor='var(--gold)';
-  $('headerStatus').textContent='📄 '+f.name;$('headerStatus').classList.add('visible');
+  $('fileName').textContent=f.name+' · '+(f.size/1024/1024).toFixed(1)+' MB';
+  $('uploadZone').style.borderColor='var(--accent)';$('uploadZone').style.borderStyle='solid';
+  $('headerStatus').textContent=f.name;$('headerStatus').classList.add('visible');
   show($('analyzeSection'));show($('resetSection'));hide($('uploadFooter'));
+  $('heroSection').style.display='none';
   var r=new FileReader();
   r.onload=function(){fileBuffer=r.result};
   r.readAsArrayBuffer(f);
 }
 
 function showError(msg){$('errorBox').textContent=msg;show($('errorBox'))}
-function setProgress(pct,msg){$('progressBar').style.width=pct+'%';$('progressText').textContent=msg}
+function setProgress(pct,msg){$('progressBar').style.width=pct+'%';$('progressText').innerHTML='<span class="progress-spinner"></span>'+msg}
 
 async function extractText(buf){
   var pdf=await pdfjsLib.getDocument({data:buf}).promise;
@@ -168,7 +232,7 @@ async function extractText(buf){
     var pg=await pdf.getPage(i);
     var c=await pg.getTextContent();
     pages.push(c.items.map(function(x){return x.str}).join(' '));
-    if(i%20===0) setProgress(10+Math.round((i/pdf.numPages)*25),'Extraindo página '+i+' de '+pdf.numPages+'...');
+    if(i%20===0) setProgress(10+Math.round((i/pdf.numPages)*25),'Extraindo texto · página '+i+'/'+pdf.numPages);
   }
   return{pages:pages,total:pdf.numPages};
 }
@@ -177,10 +241,10 @@ async function analyze(){
   if(!fileBuffer)return;
   var btn=$('analyzeBtn');btn.disabled=true;btn.textContent='ANALISANDO...';
   hide($('errorBox'));hide($('resultsSection'));show($('progressSection'));
-  setProgress(5,'Iniciando extração de texto...');
+  setProgress(5,'Preparando...');
 
   try{
-    setProgress(10,'Extraindo texto do PDF (pode levar uns segundos)...');
+    setProgress(10,'Lendo PDF...');
     var bufCopy=fileBuffer.slice(0);
     var result=await extractText(bufCopy);
     var pages=result.pages;var total=result.total;
@@ -188,14 +252,14 @@ async function analyze(){
     var fullText=pages.join('').trim();
     if(fullText.length<50)throw new Error('PDF sem texto extraível. Pode precisar de OCR.');
 
-    setProgress(35,'Preparando texto para análise...');
+    setProgress(35,'Organizando texto...');
 
     var text='';
     for(var j=0;j<pages.length;j++){if(pages[j].trim())text+='--- PÁG '+(j+1)+'/'+total+' ---\n'+pages[j]+'\n\n'}
 
     if(text.length>350000) text=text.substring(0,350000)+'\n[TRUNCADO - PDF muito grande]';
 
-    setProgress(45,'Enviando para Claude analisar (pode levar até 1 min)...');
+    setProgress(45,'Claude está analisando o processo...');
 
     var resp=await fetch('/api/analyze',{
       method:'POST',
@@ -222,9 +286,9 @@ async function analyze(){
 
     analysisResults=parsed;setProgress(100,'Concluído!');
     renderResults(parsed);show($('resultsSection'));
-    $('headerStatus').textContent='✅ Análise concluída — '+total+' páginas';
-    $('footerNote').textContent='Análise gerada por Claude AI · '+new Date().toLocaleDateString('pt-BR');show($('footerNote'));
-    setTimeout(function(){$('resultsSection').scrollIntoView({behavior:'smooth'})},300);
+    $('headerStatus').textContent='Análise concluída · '+total+' págs';
+    $('footerNote').textContent='Análise por Claude AI · '+new Date().toLocaleDateString('pt-BR');show($('footerNote'));
+    setTimeout(function(){$('resultsSection').scrollIntoView({behavior:'smooth',block:'start'})},300);
   }catch(err){showError(err.message)}
   finally{hide($('progressSection'));btn.disabled=false;btn.textContent='ANALISAR PROCESSO'}
 }
@@ -234,7 +298,7 @@ function renderResults(data){
   FIELDS.forEach(function(field,i){
     var div=document.createElement('div');
     if(field.cat){div.className='cat-row';div.textContent=field.cat}
-    else{var val=data[field.key]||'N/A';var empty=isEmpty(val);div.className='data-row';div.style.animationDelay=(i*0.03)+'s';div.innerHTML='<div class="data-label">'+field.label+'</div><div class="data-value'+(empty?' empty':'')+'">' +escapeHtml(val)+'</div>'}
+    else{var val=data[field.key]||'N/A';var empty=isEmpty(val);div.className='data-row';div.style.animationDelay=(i*0.02)+'s';div.innerHTML='<div class="data-label">'+field.label+'</div><div class="data-value'+(empty?' empty':'')+'">' +escapeHtml(val)+'</div>'}
     wrap.appendChild(div);
   });
 }
@@ -251,8 +315,9 @@ function resetAll(){
   currentFile=null;fileBuffer=null;analysisResults=null;
   show($('uploadZone'));show($('uploadFooter'));
   hide($('analyzeSection'));hide($('resultsSection'));hide($('resetSection'));hide($('footerNote'));hide($('errorBox'));
-  $('headerStatus').classList.remove('visible');$('uploadZone').style.borderColor='';
-  $('fileName').textContent='Aceita qualquer PDF trabalhista';$('fileInput').value='';
+  $('headerStatus').classList.remove('visible');$('uploadZone').style.borderColor='';$('uploadZone').style.borderStyle='dashed';
+  $('fileName').textContent='';$('fileInput').value='';
+  $('heroSection').style.display='';
 }
 
 function escapeHtml(str){var div=document.createElement('div');div.textContent=String(str);return div.innerHTML}
