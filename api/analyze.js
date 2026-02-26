@@ -27,11 +27,12 @@ export default async function handler(req, res) {
       "numero_execucao_provisoria","valor_homologado_execucao"
     ];
 
-    const extraInstructions = "\n\nINSTRUÇÕES ADICIONAIS CRÍTICAS:\n" +
-      "- VALOR DA CAUSA: Procure atentamente por 'valor da causa', 'dá à causa o valor de', 'atribui à causa' na petição inicial. O valor geralmente aparece no final da petição inicial antes dos pedidos. NUNCA retorne N/A se houver valor — procure com cuidado.\n" +
-      "- DATA DE DEMISSÃO: NÃO confunda com data de admissão. A demissão/dispensa é sempre POSTERIOR à admissão. Procure por 'demitido em', 'dispensado em', 'rescisão em', 'desligamento', 'TRCT'. Confirme que a data de demissão é DEPOIS da data de admissão.\n" +
-      "- DATA DE ADMISSÃO: Procure por 'admitido em', 'contratado em', 'início do contrato'. A admissão é sempre ANTERIOR à demissão.\n" +
-      "- VALIDAÇÃO: Se data_demissao for ANTERIOR a data_admissao, você INVERTEU os campos. Corrija.";
+    const userMessage = "ARQUIVO: " + (fileName || "processo.pdf") +
+      "\n\n⚠️ ATENÇÃO ESPECIAL - LEIA ANTES DE ANALISAR:" +
+      "\n1. VALOR DA CAUSA: Procure em TODA a petição inicial por 'valor da causa', 'dá à causa o valor', 'atribui à causa'. Pode aparecer como R$ 700.000,00 ou setecentos mil reais. Está geralmente no FINAL da petição inicial. Este campo é OBRIGATÓRIO - só use N/A se realmente não existir no texto." +
+      "\n2. DATA DE DEMISSÃO vs ADMISSÃO: São DUAS datas diferentes. ADMISSÃO = quando começou a trabalhar (data MAIS ANTIGA). DEMISSÃO = quando saiu/foi dispensado (data MAIS RECENTE). Se encontrar por exemplo 11/02/2012 e 09/04/2015, então 11/02/2012 é ADMISSÃO e 09/04/2015 é DEMISSÃO. SEMPRE verifique: demissão DEVE ser depois da admissão." +
+      "\n\nAgora analise este texto e retorne APENAS JSON válido com as 34 chaves:\n" + JSON.stringify(fieldKeys) +
+      "\n\nSiga TODAS as instruções do system prompt.\n\n" + text;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -43,10 +44,10 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 8000,
-        system: (system || "") + extraInstructions,
+        system: system || "",
         messages: [{
           role: "user",
-          content: "ARQUIVO: " + (fileName || "processo.pdf") + "\n\nAnalise este texto extraído de um PDF de processo trabalhista e retorne APENAS JSON válido com as seguintes 34 chaves:\n" + JSON.stringify(fieldKeys) + "\n\nSiga TODAS as instruções do system prompt para cada campo. Use alto esforço.\n\n" + text
+          content: userMessage
         }],
       }),
     });
