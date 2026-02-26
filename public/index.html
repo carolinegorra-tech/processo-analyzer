@@ -257,7 +257,7 @@ async function analyze(){
     var text='';
     for(var j=0;j<pages.length;j++){if(pages[j].trim())text+='--- PÁG '+(j+1)+'/'+total+' ---\n'+pages[j]+'\n\n'}
 
-    if(text.length>350000) text=text.substring(0,350000)+'\n[TRUNCADO - PDF muito grande]';
+    if(text.length>380000) text=text.substring(0,380000)+'\n[TRUNCADO - PDF muito grande]';
 
     setProgress(45,'Claude está analisando o processo...');
 
