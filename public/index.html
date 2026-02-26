@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -181,7 +182,8 @@ async function analyze(){
 
   try{
     setProgress(10,'Extraindo texto do PDF (pode levar uns segundos)...');
-    var result=await extractText(fileBuffer);
+    var bufCopy=fileBuffer.slice(0);
+    var result=await extractText(bufCopy);
     var pages=result.pages;var total=result.total;
 
     var fullText=pages.join('').trim();
