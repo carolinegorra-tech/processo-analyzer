@@ -1,4 +1,4 @@
-export const config = { api: { bodyParser: { sizeLimit: '20mb' } } };
+export const config = { api: { bodyParser: { sizeLimit: '10mb' } } };
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -11,8 +11,8 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: "API key not configured" });
 
   try {
-    const { system, fileName, pdfBase64 } = req.body;
-    if (!pdfBase64) return res.status(400).json({ error: "Missing PDF data" });
+    const { system, fileName, text } = req.body;
+    if (!text) return res.status(400).json({ error: "Missing text data" });
 
     const fieldKeys = [
       "numero_processo","status_processo","data_arquivamento",
@@ -40,20 +40,7 @@ export default async function handler(req, res) {
         system: system || "",
         messages: [{
           role: "user",
-          content: [
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: "application/pdf",
-                data: pdfBase64
-              }
-            },
-            {
-              type: "text",
-              text: "ARQUIVO: " + (fileName || "processo.pdf") + "\n\nAnalise este PDF de processo trabalhista e retorne APENAS JSON válido com as seguintes 34 chaves:\n" + JSON.stringify(fieldKeys) + "\n\nSiga TODAS as instruções do system prompt para cada campo. Use alto esforço."
-            }
-          ]
+          content: "ARQUIVO: " + (fileName || "processo.pdf") + "\n\nAnalise este texto extraído de um PDF de processo trabalhista e retorne APENAS JSON válido com as seguintes 34 chaves:\n" + JSON.stringify(fieldKeys) + "\n\nSiga TODAS as instruções do system prompt para cada campo. Use alto esforço.\n\n" + text
         }],
       }),
     });
