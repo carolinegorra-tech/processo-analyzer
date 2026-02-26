@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -189,10 +190,8 @@ async function analyze(){
 
     setProgress(35,'Preparando texto para análise...');
 
-    // Build text with reverse + normal order
-    var text='=== PÁGINAS EM ORDEM REVERSA (última primeiro) ===\n\n';
-    for(var i=pages.length-1;i>=0;i--){if(pages[i].trim())text+='--- PÁG '+(i+1)+'/'+total+' ---\n'+pages[i]+'\n\n'}
-    text+='\n=== ORDEM NORMAL ===\n\n';
+    // Build text in normal order only (to maximize content within limit)
+    var text='';
     for(var j=0;j<pages.length;j++){if(pages[j].trim())text+='--- PÁG '+(j+1)+'/'+total+' ---\n'+pages[j]+'\n\n'}
 
     // Truncate if too long (Claude max ~200k tokens)
